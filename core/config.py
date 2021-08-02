@@ -1,6 +1,4 @@
 import os
-import re
-import json
 import typing
 
 from copy import deepcopy
@@ -30,13 +28,11 @@ class ConfigManager:
     def __init__(self, bot):
         self.bot = bot
         self._cache = {}
-    
+
     def __repr__(self):
-        
         return repr(self._cache)
-    
+
     def __getitem__(self, key: str) -> typing.Any:
-        
         return self._cache[key]
 
     def populate_cache(self) -> dict:
@@ -47,4 +43,3 @@ class ConfigManager:
         self._cache = data
 
         return self._cache
-    
