@@ -1,5 +1,3 @@
-import os
-import re
 import sys
 import typing
 import asyncio
@@ -13,16 +11,12 @@ import discord
 
 from aiohttp import ClientSession
 
-from discord.ext import commands, tasks
-from discord import Member, Intents
-
-from dotenv import load_dotenv
-
-
+from discord.ext import commands
 
 logging.basicConfig(level=logging.INFO)
 
-#email_re = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
+# email_re = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
+
 
 class LdapBot(commands.Bot):
 
@@ -32,9 +26,7 @@ class LdapBot(commands.Bot):
 
         self._connected = asyncio.Event()
 
-
         self._session = None
-
         self.config = ConfigManager(self)
         self.config.populate_cache()
 
@@ -42,7 +34,6 @@ class LdapBot(commands.Bot):
 
     def _startup(self):
         self.load_extension("cogs.ldap")
-
 
     async def on_ready(self):
         await self.wait_for_connected()
@@ -56,20 +47,18 @@ class LdapBot(commands.Bot):
         token = self.config["discord_token"]
 
         return token
-    
+
     @property
     def session(self) -> ClientSession:
         if self._session is None:
             self._session = ClientSession(loop=self.loop)
         return self._session
 
-
-    
     async def wait_for_connected(self) -> None:
         await self.wait_until_ready()
         await self._connected.wait()
         await self.config.wait_until_ready()
-    
+
     def run(self):
         loop = self.loop
 
@@ -78,8 +67,8 @@ class LdapBot(commands.Bot):
             loop.add_signal_handler(signal.SIGTERM, lambda: loop.stop())
         except NotImplementedError:
             pass
-        
-        async def runner():
+
+        async def runner(self):
             try:
                 retry_intents = False
                 try:
@@ -91,7 +80,6 @@ class LdapBot(commands.Bot):
 
                     if self.ws is not None and self.ws.open:
                         await self.ws.close(code=1000)
-                    
                     self._ready.clear()
                     intents = discord.Intents.default()
                     intents.members = True
@@ -106,9 +94,10 @@ class LdapBot(commands.Bot):
                     await self.close()
                 if self._session:
                     await self._session.close()
+
         def stop_loop_on_completion(f):
             loop.stop()
-        
+
         def _cancel_tasks():
             if sys.version_info < (3, 8):
                 task_retriever = asyncio.Task.all_tasks
@@ -119,7 +108,7 @@ class LdapBot(commands.Bot):
 
             if not tasks:
                 return
-            
+
             for task in tasks:
                 task.cancel()
 
@@ -144,15 +133,13 @@ class LdapBot(commands.Bot):
             pass
         finally:
             future.remove_done_callback(stop_loop_on_completion)
-            
 
-            try:
-                _cancel_tasks()
-                if sys.version_info >= (3, 6):
-                    loop.run_until_complete(loop.shutdown_asyncgens())
-            finally:
-                
-                loop.close()
+        try:
+            _cancel_tasks()
+            if sys.version_info >= (3, 6):
+                loop.run_until_complete(loop.shutdown_asyncgens())
+        finally:
+            loop.close()
 
         if not future.cancelled():
             try:
@@ -160,10 +147,12 @@ class LdapBot(commands.Bot):
             except KeyboardInterrupt:
                 # I am unsure why this gets raised here but suppress it anyway
                 return None
-        
+
+
 def main():
     my_bot = LdapBot()
     my_bot.run()
+
 
 if __name__ == "__main__":
     main()
